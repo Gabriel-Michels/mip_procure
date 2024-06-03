@@ -21,6 +21,8 @@ def solve(dat):
     ini_inventory = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']), dat.inventory['Initial Inventory']))
     unit_price = dict(zip(dat.packing['Packing ID'], dat.packing['Unit Price']))
     inven_cost = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']), dat.inventory['Inventory Cost']))
+    acquisition_limit_period = dict(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID'], dat.demand_packing['Acquisition Limit Period']))
+    transport_limit_period = dict(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID'], dat.demand_packing['Transport Limit Period']))
     print(inven_cost)
     print(unit_price)
     print(min_inventory)
@@ -46,13 +48,15 @@ def solve(dat):
         mdl.addConstraint(lpSum(z[i, t] for i in I) <= params['InventoryCapacityGourmet'], name=f'C1b_{t}')
 
     # C2) Acquisition limit:
-    for t in T:
-        mdl.addConstraint(lpSum(w[i, t] for i in I) <= params['AcquisitionLimitPeriod'], name=f'C2_{t}') #Aquisition capacity
-            # TODO: acquisition limite must depend of each packing.
+    for i in I:
+        for t in T:
+            mdl.addConstraint(w[i, t] <= acquisition_limit_period[i, t])
+
     # C3) Transporting limit
-    for t in T:
-        mdl.addConstraint(lpSum(x[i, t] for i in I) <= params['TransportingLimitByPeriod'], name=f'C3_{t}')  # Transporting by period capacity
-            # TODO: transporting limit must depend of each packing (maybe this is not necessary)
+    for i in I:
+        for t in T:
+            mdl.addConstraint(x[i, t] <= transport_limit_period[i,t])
+
     # C4) Flow Balance constraint:
     for t in T:  # We have to delete the last period because of t+1 below
         for i in I:
