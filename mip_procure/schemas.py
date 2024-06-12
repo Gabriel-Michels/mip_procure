@@ -76,20 +76,9 @@ input_schema.add_data_row_predicate(table='distribution', predicate_name='Minimu
 
 # region OUTPUT SCHEMA
 output_schema = PanDatFactory(
-    acquisition_by_period=[['Packing ID', 'Period ID'], ['Acquired Quantity', 'Transferred Quantity']],
-    pet_gourmet=[['Packing ID', 'Period ID'], ['Initial Inventory',  'Demand', 'Final Inventory']],
-    patas_pack=[['Packing ID', 'Period ID'], ['Initial Inventory', 'Transferred Quantity', 'Final Inventory']]
+    pet_gourmet=[['Packing ID', 'Period ID'], ['Initial Inventory',  'Demand', 'Transferred Quantity', 'Final Inventory']],
+    patas_pack=[['Packing ID', 'Period ID'], ['Initial Inventory', 'Transferred Quantity', 'Acquired Quantity', 'Final Inventory']]
 )
-
-
-
-
-
-table = 'acquisition_by_period'
-output_schema.set_data_type(table=table, field='Packing ID', number_allowed=False, strings_allowed='*')
-output_schema.set_data_type(table=table, field='Period ID', number_allowed=True, strings_allowed=())
-output_schema.set_data_type(table=table, field='Acquired Quantity', number_allowed=True, strings_allowed=())
-
 
 
 # endregion
