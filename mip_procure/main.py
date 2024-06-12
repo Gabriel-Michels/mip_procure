@@ -122,28 +122,32 @@ def solve(dat):
         z_df = pd.DataFrame(z_sol, columns=['Packing ID', 'Period ID', 'Final Inventory'])
 
         #demand table
-        demand_packing_df = pd.read_csv('data/inputs/demand_packing.csv')
+        demand_packing_df = dat.demand_packing.copy()
         demand_df = demand_packing_df[['Packing ID', 'Period ID', 'Demand']]
 
         #Pet Gourmet Table
-        z2_df = demand_df.merge(z_df, on=['Packing ID', 'Period ID'], how='left')
-        z2_df['Initial Inventory'] = z2_df['Demand'] + z2_df['Final Inventory']
-        new_order = ['Packing ID', 'Period ID', 'Initial Inventory', 'Demand', 'Final Inventory']
-        z2_df = z2_df[new_order]
-        sln.pet_gourmet = z2_df
+        pet_gourmet_df = x_df.merge(z_df, on=['Packing ID', 'Period ID'], how='left')
+        pet_gourmet_df = demand_df.merge(pet_gourmet_df, on=['Packing ID', 'Period ID'], how='right')
+
+        #If a row in demand column is not specified:
+        pet_gourmet_df['Demand'] = pet_gourmet_df['Demand'].fillna(0) # zero: if demand was not specified then we don't have damand.
+        pet_gourmet_df['Initial Inventory'] = pet_gourmet_df['Demand'] + pet_gourmet_df['Final Inventory'] - pet_gourmet_df['Transferred Quantity']
+        new_order = ['Packing ID', 'Period ID', 'Initial Inventory', 'Demand', 'Transferred Quantity', 'Final Inventory' ]
+        pet_gourmet_df = pet_gourmet_df[new_order]
+        pet_gourmet_df = pet_gourmet_df.sort_values(by=['Packing ID', 'Period ID'], ascending=[True, True], ignore_index=True)
+        sln.pet_gourmet = pet_gourmet_df
 
         # Patas Pack Table
         y_df = pd.DataFrame(y_sol, columns=['Packing ID', 'Period ID', 'Final Inventory'])
-        y2_df = x_df.merge(y_df, on=['Packing ID', 'Period ID'], how='left')
-        y2_df['Initial Inventory'] = y2_df['Transferred Quantity'] + y2_df['Final Inventory']
-        new_order = ['Packing ID', 'Period ID', 'Initial Inventory', 'Transferred Quantity', 'Final Inventory']
-        y2_df = y2_df[new_order]
-        sln.patas_pack = y2_df
+        patas_pack_df = x_df.merge(y_df, on=['Packing ID', 'Period ID'], how='left')
+        patas_pack_df = patas_pack_df.merge(w_df, on=['Packing ID', 'Period ID'], how='left')
+        # y[i, t] == y[i, t - 1] + w[i, t] - x[i, t] remember the flow balance's equation
+        patas_pack_df['Initial Inventory'] = patas_pack_df['Transferred Quantity'] + patas_pack_df['Final Inventory'] - patas_pack_df['Acquired Quantity']
+        new_order = ['Packing ID', 'Period ID', 'Initial Inventory', 'Transferred Quantity', 'Acquired Quantity', 'Final Inventory']
+        patas_pack_df = patas_pack_df[new_order]
+        patas_pack_df = patas_pack_df.sort_values(by=['Packing ID', 'Period ID'], ascending=[True, True], ignore_index=True)
+        sln.patas_pack = patas_pack_df
 
-        # Acquisition by period table
-        acquisition_df = w_df.merge(x_df, on=['Packing ID', 'Period ID'], how='left')
-        sln.acquisition_by_period = acquisition_df
-
-        return print(sln.pet_gourmet), print('\n', sln.acquisition_by_period), print('\n', sln.patas_pack)
+    return sln
 
 
