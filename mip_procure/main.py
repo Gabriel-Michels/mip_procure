@@ -1,11 +1,7 @@
-
 from mip_procure.schemas import input_schema, output_schema
-
 import pulp
 from pulp import lpSum
 import pandas as pd
-
-
 
 def solve(dat):
     # Prepare optimization parameters
@@ -14,7 +10,6 @@ def solve(dat):
     T = set(dat.demand_packing['Period ID'])
     first_period = min(T)
     T_extended = T.union({first_period -1})
-
     params = input_schema.create_full_parameters_dict(dat)
     demands = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']), dat.demand_packing['Demand']))
     min_inventory = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']), dat.inventory['Minimum Inventory']))
@@ -25,15 +20,9 @@ def solve(dat):
                                         dat.demand_packing['Acquisition Limit Period']))
     transport_limit_period = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
                                       dat.demand_packing['Transport Limit Period']))
-    print(inven_cost)
-    print(unit_price)
-    print(min_inventory)
-    print(demands)
-    print('params:\n', params)  #It's just a test
 
-
-    #Build optimization model
-    mdl = pulp.LpProblem('PetGourmet', sense=pulp.LpMinimize) #Define the model
+    # Build optimization model
+    mdl = pulp.LpProblem('PetGourmet', sense=pulp.LpMinimize) # Define the model
     keys = [(i, t) for i in I for t in T]
     keys_extended = [(i, t) for i in I for t in T_extended]
     y = pulp.LpVariable.dicts(indices=keys_extended, cat=pulp.LpInteger, lowBound=0.0, name='y')  # Qty  in Patas Pack
@@ -58,13 +47,12 @@ def solve(dat):
     for i in I:
         for t in T:
             mdl.addConstraint(x[i, t]  <= transport_limit_period[i, t])
-    # TODO: Não pode depender da embalagem.
 
     # C4) Flow Balance constraint:
     for t in T:
         for i in I:
             mdl.addConstraint(z[i, t] == z[i, t - 1] + x[i, t] - demands[i, t], name=f'C4a_{t}_{i}')
-            mdl.addConstraint(y[i, t] == y[i, t - 1] + w[i, t] - x[i, t], name=f'C4b_{t}_{i}')      #New constraint, necessary to add to formulation
+            mdl.addConstraint(y[i, t] == y[i, t - 1] + w[i, t] - x[i, t], name=f'C4b_{t}_{i}')
 
     # C5) Minimum Inventory constraint:
     for t in T:
@@ -75,7 +63,8 @@ def solve(dat):
     for t in T:
         if t <= max(T) - params['MaxTimePackingPack']:
             for i in I:
-                mdl.addConstraint(lpSum(x[i, t + l] for l in range(1, params['MaxTimePackingPack'] + 1)) >= y[i, t], name=f'C6_{t}_{i}')
+                mdl.addConstraint(lpSum(x[i, t + l] for l in range(1, params['MaxTimePackingPack'] + 1)) >= y[i, t],
+                                  name=f'C6_{t}_{i}')
 
     # C7) Initial Inventory Constraint:
     for i in I:
@@ -84,8 +73,7 @@ def solve(dat):
 
     # end constraint's region
 
-
-    #Set Objective Function
+    # Set Objective Function
     mdl.setObjective(
         lpSum(unit_price[i] * w[i, t] for i in I for t in T) +
         lpSum(inven_cost['Pack', i] * y[i, t] for i in I for t in T) +
@@ -107,16 +95,14 @@ def solve(dat):
         print('w:\n', w_sol)
         print('z:\n', z_sol)
 
-
     else:
         x_sol = None
         print(f'Model is not optimal. Status: {status}')
 
-    # Populate output schema
+    # Populate the output schema
     sln = output_schema.PanDat()
 
     if status == 'Optimal':
-
         w_df = pd.DataFrame(w_sol, columns=['Packing ID', 'Period ID', 'Acquired Quantity'])
         x_df = pd.DataFrame(x_sol, columns=['Packing ID', 'Period ID', 'Transferred Quantity'])
         z_df = pd.DataFrame(z_sol, columns=['Packing ID', 'Period ID', 'Final Inventory'])
@@ -128,10 +114,10 @@ def solve(dat):
         #Pet Gourmet Table
         pet_gourmet_df = x_df.merge(z_df, on=['Packing ID', 'Period ID'], how='left')
         pet_gourmet_df = demand_df.merge(pet_gourmet_df, on=['Packing ID', 'Period ID'], how='right')
-
-        #If a row in demand column is not specified:
-        pet_gourmet_df['Demand'] = pet_gourmet_df['Demand'].fillna(0) # zero: if demand was not specified then we don't have damand.
-        pet_gourmet_df['Initial Inventory'] = pet_gourmet_df['Demand'] + pet_gourmet_df['Final Inventory'] - pet_gourmet_df['Transferred Quantity']
+        # if demand wasn't specified then we don't have demand.
+        pet_gourmet_df['Demand'] = pet_gourmet_df['Demand'].fillna(0)
+        pet_gourmet_df['Initial Inventory'] = (pet_gourmet_df['Demand'] + pet_gourmet_df['Final Inventory']
+                                               - pet_gourmet_df['Transferred Quantity'])
         new_order = ['Packing ID', 'Period ID', 'Initial Inventory', 'Demand', 'Transferred Quantity', 'Final Inventory' ]
         pet_gourmet_df = pet_gourmet_df[new_order]
         pet_gourmet_df = pet_gourmet_df.sort_values(by=['Packing ID', 'Period ID'], ascending=[True, True], ignore_index=True)
