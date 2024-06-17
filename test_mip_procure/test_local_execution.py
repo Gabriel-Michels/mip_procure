@@ -40,3 +40,4 @@ print('row_failures:', row_failures)
 output_path = 'data/outputs/'
 output_schema.csv.write_directory(sln, output_path)
 output_schema.xls.write_file(sln, output_path+'Output.xlsx')
+

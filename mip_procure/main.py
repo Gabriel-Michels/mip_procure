@@ -18,11 +18,9 @@ def solve(dat):
     inven_cost = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']), dat.inventory['Inventory Cost']))
     acquisition_limit_period = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
                                         dat.demand_packing['Acquisition Limit Period']))
-    transport_limit_period = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
-                                      dat.demand_packing['Transport Limit Period']))
 
     # Build optimization model
-    mdl = pulp.LpProblem('PetGourmet', sense=pulp.LpMinimize) # Define the model
+    mdl = pulp.LpProblem('PetGourmet', sense=pulp.LpMinimize)  # Define the model
     keys = [(i, t) for i in I for t in T]
     keys_extended = [(i, t) for i in I for t in T_extended]
     y = pulp.LpVariable.dicts(indices=keys_extended, cat=pulp.LpInteger, lowBound=0.0, name='y')  # Qty  in Patas Pack
@@ -41,12 +39,10 @@ def solve(dat):
     # C2) Acquisition limit of packing in by period:
     for i in I:
         for t in T:
-            mdl.addConstraint(w[i, t] <= acquisition_limit_period[i, t])
-
+            mdl.addConstraint(w[i, t] <= acquisition_limit_period[i, t], name=f'C2_{t}_{i}')
     # C3) Transporting limit by period
-    for i in I:
-        for t in T:
-            mdl.addConstraint(x[i, t]  <= transport_limit_period[i, t])
+    for t in T:
+        mdl.addConstraint(lpSum(x[i,t] for i in I) <= params['TransportingLimitByPeriod'], name=f'C3_{t}')
 
     # C4) Flow Balance constraint:
     for t in T:
@@ -128,8 +124,10 @@ def solve(dat):
         patas_pack_df = x_df.merge(y_df, on=['Packing ID', 'Period ID'], how='left')
         patas_pack_df = patas_pack_df.merge(w_df, on=['Packing ID', 'Period ID'], how='left')
         # y[i, t] == y[i, t - 1] + w[i, t] - x[i, t] remember the flow balance's equation
-        patas_pack_df['Initial Inventory'] = patas_pack_df['Transferred Quantity'] + patas_pack_df['Final Inventory'] - patas_pack_df['Acquired Quantity']
-        new_order = ['Packing ID', 'Period ID', 'Initial Inventory', 'Transferred Quantity', 'Acquired Quantity', 'Final Inventory']
+        patas_pack_df['Initial Inventory'] = (patas_pack_df['Transferred Quantity'] +
+                                              patas_pack_df['Final Inventory'] - patas_pack_df['Acquired Quantity'])
+        new_order = ['Packing ID', 'Period ID', 'Initial Inventory', 'Transferred Quantity',
+                     'Acquired Quantity', 'Final Inventory']
         patas_pack_df = patas_pack_df[new_order]
         patas_pack_df = patas_pack_df.sort_values(by=['Packing ID', 'Period ID'], ascending=[True, True], ignore_index=True)
         sln.patas_pack = patas_pack_df
