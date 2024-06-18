@@ -11,13 +11,19 @@ def solve(dat):
     first_period = min(T)
     T_extended = T.union({first_period -1})
     params = input_schema.create_full_parameters_dict(dat)
-    demands = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']), dat.demand_packing['Demand']))
-    min_inventory = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']), dat.inventory['Minimum Inventory']))
-    ini_inventory = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']), dat.inventory['Initial Inventory']))
+    demands = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
+                       dat.demand_packing['Demand']))
+    min_inventory = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']),
+                             dat.inventory['Minimum Inventory']))
+    ini_inventory = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']),
+                             dat.inventory['Initial Inventory']))
     unit_price = dict(zip(dat.packing['Packing ID'], dat.packing['Unit Price']))
-    inven_cost = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']), dat.inventory['Inventory Cost']))
+    inven_cost = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']),
+                          dat.inventory['Inventory Cost']))
     acquisition_limit_period = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
                                         dat.demand_packing['Acquisition Limit Period']))
+    acquisition_min_period = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
+                                        dat.demand_packing['Acquisition Min Period']))
 
     # Build optimization model
     mdl = pulp.LpProblem('PetGourmet', sense=pulp.LpMinimize)  # Define the model
@@ -27,8 +33,10 @@ def solve(dat):
     z = pulp.LpVariable.dicts(indices=keys_extended, cat=pulp.LpInteger, lowBound=0.0, name='z')  # Qty  in Pet Gourmet
     x = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpInteger, lowBound=0.0, name='x')  # Qty of transporting packing
     w = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpInteger, lowBound=0.0, name='w')  # Acquired quantity of packing
+    wb = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpBinary, name='wb') # Binary decision variable of acquisition
 
     # Constraints:
+
     # C1) Inventory capacity:
     for t in T:
         # Patas Pack Inventory Capacity
@@ -36,10 +44,11 @@ def solve(dat):
         # Pet Gourmet Inventory Capacity
         mdl.addConstraint(lpSum(z[i, t] for i in I) <= params['InventoryCapacityGourmet'], name=f'C1b_{t}')
 
-    # C2) Acquisition limit of packing in by period:
+    # C2) Acquisition limit of packing i by period:
     for i in I:
         for t in T:
-            mdl.addConstraint(w[i, t] <= acquisition_limit_period[i, t], name=f'C2_{t}_{i}')
+            mdl.addConstraint(w[i, t] <= wb[i, t]*acquisition_limit_period[i, t], name=f'C2_{t}_{i}')
+
     # C3) Transporting limit by period
     for t in T:
         mdl.addConstraint(lpSum(x[i,t] for i in I) <= params['TransportingLimitByPeriod'], name=f'C3_{t}')
@@ -67,6 +76,11 @@ def solve(dat):
         mdl.addConstraint(y[i, first_period - 1] == ini_inventory['Pack', i], name=f'C7a_{i}')
         mdl.addConstraint(z[i, first_period - 1] == ini_inventory['Gourmet', i], name=f'C7b_{i}')
 
+    # C8) Minimum of acquisition of a packing:
+    for i in I:
+        for t in T:
+            w[i, t] >= wb[i ,t]*acquisition_min_period[i,t]
+
     # end constraint's region
 
     # Set Objective Function
@@ -86,10 +100,7 @@ def solve(dat):
         y_sol = [(i, t, var.value()) for (i, t), var in y.items()]
         z_sol = [(i, t, var.value()) for (i, t), var in z.items()]
         w_sol = [(i, t, var.value()) for (i, t), var in w.items()]
-        print('x:\n', x_sol)
-        print('y:\n', y_sol)
-        print('w:\n', w_sol)
-        print('z:\n', z_sol)
+        wb_sol = [(i, t, var.value()) for (i, t), var in wb.items()]
 
     else:
         x_sol = None
@@ -103,11 +114,11 @@ def solve(dat):
         x_df = pd.DataFrame(x_sol, columns=['Packing ID', 'Period ID', 'Transferred Quantity'])
         z_df = pd.DataFrame(z_sol, columns=['Packing ID', 'Period ID', 'Final Inventory'])
 
-        #demand table
+        # demand table
         demand_packing_df = dat.demand_packing.copy()
         demand_df = demand_packing_df[['Packing ID', 'Period ID', 'Demand']]
 
-        #Pet Gourmet Table
+        # Pet Gourmet Table
         pet_gourmet_df = x_df.merge(z_df, on=['Packing ID', 'Period ID'], how='left')
         pet_gourmet_df = demand_df.merge(pet_gourmet_df, on=['Packing ID', 'Period ID'], how='right')
         # if demand wasn't specified then we don't have demand.
