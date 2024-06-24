@@ -100,7 +100,7 @@ def solve(dat):
         y_sol = [(i, t, var.value()) for (i, t), var in y.items()]
         z_sol = [(i, t, var.value()) for (i, t), var in z.items()]
         w_sol = [(i, t, var.value()) for (i, t), var in w.items()]
-        wb_sol = [(i, t, var.value()) for (i, t), var in wb.items()]
+        wb_sol = [(i, t, var.value()) for (i, t), var in wb.items()] #without future use
 
     else:
         x_sol = None
@@ -125,9 +125,11 @@ def solve(dat):
         pet_gourmet_df['Demand'] = pet_gourmet_df['Demand'].fillna(0)
         pet_gourmet_df['Initial Inventory'] = (pet_gourmet_df['Demand'] + pet_gourmet_df['Final Inventory']
                                                - pet_gourmet_df['Transferred Quantity'])
-        new_order = ['Packing ID', 'Period ID', 'Initial Inventory', 'Demand', 'Transferred Quantity', 'Final Inventory' ]
+        new_order = ['Packing ID', 'Period ID', 'Initial Inventory', 'Demand',
+                     'Transferred Quantity', 'Final Inventory' ]
         pet_gourmet_df = pet_gourmet_df[new_order]
-        pet_gourmet_df = pet_gourmet_df.sort_values(by=['Packing ID', 'Period ID'], ascending=[True, True], ignore_index=True)
+        pet_gourmet_df = pet_gourmet_df.sort_values(by=['Packing ID', 'Period ID'],
+                                                    ascending=[True, True], ignore_index=True)
         sln.pet_gourmet = pet_gourmet_df
 
         # Patas Pack Table
@@ -140,7 +142,8 @@ def solve(dat):
         new_order = ['Packing ID', 'Period ID', 'Initial Inventory', 'Transferred Quantity',
                      'Acquired Quantity', 'Final Inventory']
         patas_pack_df = patas_pack_df[new_order]
-        patas_pack_df = patas_pack_df.sort_values(by=['Packing ID', 'Period ID'], ascending=[True, True], ignore_index=True)
+        patas_pack_df = patas_pack_df.sort_values(by=['Packing ID', 'Period ID'],
+                                                  ascending=[True, True], ignore_index=True)
         sln.patas_pack = patas_pack_df
 
     return sln
