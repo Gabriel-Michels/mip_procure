@@ -34,6 +34,7 @@ def solve(dat):
     x = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpInteger, lowBound=0.0, name='x')  # Qty of transporting packing
     w = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpInteger, lowBound=0.0, name='w')  # Acquired quantity of packing
     wb = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpBinary, name='wb') # Binary decision variable of acquisition
+    xb = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpBinary, name='xb') # Binary decision varianle of transport
 
     # Constraints:
 
@@ -80,6 +81,17 @@ def solve(dat):
     for i in I:
         for t in T:
             w[i, t] >= wb[i ,t]*acquisition_min_period[i,t]
+
+    # C9) Limitation of different types of packings that are of transferred
+    for t in T:
+        mdl.addConstraint(lpSum(xb[i, t] for i in I ) <= params['DiversityTransportingPacking'] )
+
+    # C10) limit of transporting of a packing
+    for i in I:
+        for t in T:
+            mdl.addConstraint(x[i, t] <= xb[i, t] *params['TransportingLimitByPeriod'])
+
+
 
     # end constraint's region
 

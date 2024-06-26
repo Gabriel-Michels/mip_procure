@@ -62,6 +62,8 @@ input_schema.add_parameter('TransportingLimitByPeriod', default_value=40000, num
                            strings_allowed=(), min=0.0, inclusive_min=True)
 input_schema.add_parameter('MaxTimePackingPack', default_value=1, number_allowed=True,
                            strings_allowed=(), min=1, inclusive_min=True, must_be_int=True)
+input_schema.add_parameter('DiversityTransportingPacking', default_value=5, number_allowed=True,
+                           strings_allowed=(), min=1, inclusive_min=True, must_be_int=True)
 # end region
 
 distribution=[['Packing ID'], ['Minimum Transfer Qty', 'Maximum Transfer Qty', 'Lead Time']],
