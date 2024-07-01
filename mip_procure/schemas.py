@@ -4,7 +4,7 @@ from ticdat import PanDatFactory
 input_schema = PanDatFactory(
    parameters=[['Name'], ['Value']], # No change the column's name
    packing=[['Packing ID'], ['Unit Price', 'Size', 'Color']],
-   demand_packing=[['Packing ID', 'Period ID'], ['Demand', 'Acquisition Limit Period', 'Acquisition Min Period']],
+   demand_packing=[['Packing ID', 'Period ID'], ['Demand', 'Min Order Qty', 'Max Order Qty']],
    inventory=[['Factory ID', 'Packing ID'], ['Initial Inventory', 'Minimum Inventory', 'Inventory Cost']],
    distribution=[['Packing ID'], ['Minimum Transfer Qty', 'Maximum Transfer Qty', 'Lead Time']],
    items_aging=[['Packing ID'], ['Maximum Time']])
@@ -32,9 +32,9 @@ input_schema.set_default_value(table='packing', field='Unit Price', default_valu
 input_schema.set_data_type(table = 'demand_packing', field='Packing ID', number_allowed=False, strings_allowed='*')
 input_schema.set_data_type(table = 'demand_packing', field='Demand', number_allowed=True, strings_allowed=())
 input_schema.set_data_type(table = 'demand_packing', field='Period ID', number_allowed=True, strings_allowed=())
-input_schema.set_data_type(table = 'demand_packing', field='Acquisition Limit Period',
+input_schema.set_data_type(table = 'demand_packing', field='Max Order Qty',
                            number_allowed=True, strings_allowed=())
-input_schema.set_data_type(table = 'demand_packing', field='Acquisition Min Period',
+input_schema.set_data_type(table = 'demand_packing', field='Min Order Qty',
                            number_allowed=True, strings_allowed=())
 
 # end region
@@ -110,4 +110,4 @@ output_schema.set_data_type(table=table, field='Acquired Quantity',  strings_all
 output_schema.set_data_type(table=table, field='Final Inventory',  strings_allowed=(),
                             min=0, inclusive_min=True, max=float('inf'), inclusive_max=False)
 # end region patas pack
-# endregion
+# endregion data type

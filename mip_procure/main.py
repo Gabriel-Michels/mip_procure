@@ -2,7 +2,6 @@ from mip_procure.schemas import input_schema, output_schema
 import pulp
 from pulp import lpSum
 import pandas as pd
-
 def solve(dat):
     # Prepare optimization parameters
     I = set(dat.packing['Packing ID'])
@@ -11,7 +10,7 @@ def solve(dat):
     first_period = min(T)
     T_extended = T.union({first_period -1})
     params = input_schema.create_full_parameters_dict(dat)
-    demands = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
+    dem = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
                        dat.demand_packing['Demand']))
     min_inventory = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']),
                              dat.inventory['Minimum Inventory']))
@@ -20,10 +19,10 @@ def solve(dat):
     unit_price = dict(zip(dat.packing['Packing ID'], dat.packing['Unit Price']))
     inven_cost = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']),
                           dat.inventory['Inventory Cost']))
-    acquisition_limit_period = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
-                                        dat.demand_packing['Acquisition Limit Period']))
-    acquisition_min_period = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
-                                        dat.demand_packing['Acquisition Min Period']))
+    al = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
+                                        dat.demand_packing['Max Order Qty']))
+    moq = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
+                                        dat.demand_packing['Min Order Qty']))
 
     # Build optimization model
     mdl = pulp.LpProblem('PetGourmet', sense=pulp.LpMinimize)  # Define the model
@@ -40,24 +39,25 @@ def solve(dat):
 
     # C1) Inventory capacity:
     for t in T:
-        # Patas Pack Inventory Capacity
+        # Patas Pack Inventory Capacity:
         mdl.addConstraint(lpSum(y[i, t] for i in I) <= params['InventoryCapacityPack'], name=f'C1a_{t}')
-        # Pet Gourmet Inventory Capacity
+        # Pet Gourmet Inventory Capacity:
         mdl.addConstraint(lpSum(z[i, t] for i in I) <= params['InventoryCapacityGourmet'], name=f'C1b_{t}')
 
-    # C2) Acquisition limit of packing i by period:
+    # C2) Minimum and maximum order quantity:
     for i in I:
         for t in T:
-            mdl.addConstraint(w[i, t] <= wb[i, t]*acquisition_limit_period[i, t], name=f'C2_{t}_{i}')
-
-    # C3) Transporting limit by period
+            mdl.addConstraint(w[i, t] <= wb[i, t]*al[i, t], name=f'C2a_{t}_{i}')
+            mdl.addConstraint(w[i, t] >= wb[i ,t]*moq[i,t], name=f'C2b_{t}_{i}')
+                        
+    # C3) Transporting limit by period:
     for t in T:
         mdl.addConstraint(lpSum(x[i,t] for i in I) <= params['TransportingLimitByPeriod'], name=f'C3_{t}')
 
     # C4) Flow Balance constraint:
     for t in T:
         for i in I:
-            mdl.addConstraint(z[i, t] == z[i, t - 1] + x[i, t] - demands[i, t], name=f'C4a_{t}_{i}')
+            mdl.addConstraint(z[i, t] == z[i, t - 1] + x[i, t] - dem[i, t], name=f'C4a_{t}_{i}')
             mdl.addConstraint(y[i, t] == y[i, t - 1] + w[i, t] - x[i, t], name=f'C4b_{t}_{i}')
 
     # C5) Minimum Inventory constraint:
@@ -77,21 +77,14 @@ def solve(dat):
         mdl.addConstraint(y[i, first_period - 1] == ini_inventory['Pack', i], name=f'C7a_{i}')
         mdl.addConstraint(z[i, first_period - 1] == ini_inventory['Gourmet', i], name=f'C7b_{i}')
 
-    # C8) Minimum of acquisition of a packing:
-    for i in I:
-        for t in T:
-            w[i, t] >= wb[i ,t]*acquisition_min_period[i,t]
-
-    # C9) Limitation of different types of packings that are of transferred
+    # C8) Maximum number of different packing types that can be transferred:
     for t in T:
         mdl.addConstraint(lpSum(xb[i, t] for i in I ) <= params['DiversityTransportingPacking'] )
 
-    # C10) limit of transporting of a packing
+    # C9) Maximum tranfer quantity for each packing:
     for i in I:
         for t in T:
             mdl.addConstraint(x[i, t] <= xb[i, t] *params['TransportingLimitByPeriod'])
-
-
 
     # end constraint's region
 
@@ -112,7 +105,7 @@ def solve(dat):
         y_sol = [(i, t, var.value()) for (i, t), var in y.items()]
         z_sol = [(i, t, var.value()) for (i, t), var in z.items()]
         w_sol = [(i, t, var.value()) for (i, t), var in w.items()]
-        wb_sol = [(i, t, var.value()) for (i, t), var in wb.items()] #without future use
+        wb_sol = [(i, t, var.value()) for (i, t), var in wb.items()]  # without future use
 
     else:
         x_sol = None
