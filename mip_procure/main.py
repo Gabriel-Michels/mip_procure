@@ -3,7 +3,7 @@ import pulp
 from pulp import lpSum
 import pandas as pd
 def solve(dat):
-    # Prepare optimization parameters
+    # region Prepare optimization parameters
     I = set(dat.packing['Packing ID'])
     J = set(dat.inventory['Factory ID'])
     T = set(dat.demand_packing['Period ID'])
@@ -23,8 +23,9 @@ def solve(dat):
                                         dat.demand_packing['Max Order Qty']))
     moq = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
                                         dat.demand_packing['Min Order Qty']))
+    # endregion
 
-    # Build optimization model
+    # region Build optimization model
     mdl = pulp.LpProblem('PetGourmet', sense=pulp.LpMinimize)  # Define the model
     keys = [(i, t) for i in I for t in T]
     keys_extended = [(i, t) for i in I for t in T_extended]
@@ -34,8 +35,9 @@ def solve(dat):
     w = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpInteger, lowBound=0.0, name='w')  # Acquired quantity of packing
     wb = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpBinary, name='wb') # Binary decision variable of acquisition
     xb = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpBinary, name='xb') # Binary decision varianle of transport
+    # endregion
 
-    # Constraints:
+    # region Constraints:
 
     # C1) Inventory capacity:
     for t in T:
@@ -69,7 +71,7 @@ def solve(dat):
     for t in T:
         if t <= max(T) - params['MaxTimePackingPack']:
             for i in I:
-                mdl.addConstraint(lpSum(x[i, t + l] for l in range(1, params['MaxTimePackingPack'] + 1)) >= y[i, t],
+                mdl.addConstraint(lpSum(x[i, t + l] for l in range(1, int(params['MaxTimePackingPack']) + 1)) >= y[i, t],
                                   name=f'C6_{t}_{i}')
 
     # C7) Initial Inventory Constraint:
@@ -86,16 +88,17 @@ def solve(dat):
         for t in T:
             mdl.addConstraint(x[i, t] <= xb[i, t] *params['TransportingLimitByPeriod'])
 
-    # end constraint's region
+    # endregion Constraints
 
-    # Set Objective Function
+    # region Set Objective Function
     mdl.setObjective(
         lpSum(unit_price[i] * w[i, t] for i in I for t in T) +
         lpSum(inven_cost['Pack', i] * y[i, t] for i in I for t in T) +
         lpSum(inven_cost['Gourmet', i] * z[i, t] for i in I for t in T)
     )
+    # endregion
 
-    # Optimize and retrieve the solution
+    # region Optimize and retrieve the solution
     mdl.writeLP('model.lp')
     mdl.solve()
     status = pulp.LpStatus[mdl.status]
@@ -111,7 +114,9 @@ def solve(dat):
         x_sol = None
         print(f'Model is not optimal. Status: {status}')
 
-    # Populate the output schema
+    #endregion
+
+    # region Populate the output schema
     sln = output_schema.PanDat()
 
     if status == 'Optimal':
@@ -150,7 +155,13 @@ def solve(dat):
         patas_pack_df = patas_pack_df.sort_values(by=['Packing ID', 'Period ID'],
                                                   ascending=[True, True], ignore_index=True)
         sln.patas_pack = patas_pack_df
+    # endregion
 
+    import ticdat
+    print('#' *30)
+    print(ticdat.__version__)
+    print('#' *30)
+    
     return sln
 
 
