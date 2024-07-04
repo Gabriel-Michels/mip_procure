@@ -158,10 +158,7 @@ def solve(dat):
     # endregion
 
     import ticdat
-    print('#' *30)
-    print(ticdat.__version__)
-    print('#' *30)
-    
+
     return sln
 
 
