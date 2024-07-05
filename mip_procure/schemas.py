@@ -6,7 +6,7 @@ input_schema = PanDatFactory(
    packing=[['Packing ID'], ['Unit Price', 'Size', 'Color']],
    demand_packing=[['Packing ID', 'Period ID'], ['Demand', 'Min Order Qty', 'Max Order Qty']],
    inventory=[['Factory ID', 'Packing ID'], ['Initial Inventory', 'Minimum Inventory', 'Inventory Cost']],
-   distribution=[['Packing ID'], ['Minimum Transfer Qty', 'Maximum Transfer Qty', 'Lead Time']],
+   distribution=[['Packing ID'], ['Minimum Transfer Qty', 'Maximum Transfer Qty']],
    items_aging=[['Packing ID'], ['Maximum Time']])
 # endregion
 
@@ -62,8 +62,6 @@ input_schema.set_data_type(table = 'distribution', field='Packing ID', number_al
 input_schema.set_data_type(table='distribution', field='Minimum Transfer Qty', number_allowed=True, min=0,
                            inclusive_min=True, must_be_int=True, strings_allowed=())
 input_schema.set_data_type(table='distribution', field='Maximum Transfer Qty', number_allowed=True, must_be_int=True,
-                           min=0, inclusive_min=True, strings_allowed=())
-input_schema.set_data_type(table='distribution', field='Lead Time', number_allowed=True, must_be_int=True,
                            min=0, inclusive_min=True, strings_allowed=())
 # endregion
 # endregion
