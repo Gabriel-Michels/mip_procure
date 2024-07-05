@@ -157,8 +157,6 @@ def solve(dat):
         sln.patas_pack = patas_pack_df
     # endregion
 
-    import ticdat
-
     return sln
 
 
