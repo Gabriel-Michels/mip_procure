@@ -1,10 +1,7 @@
 from pathlib import Path
 import pandas as pd
-from pprint import pprint
-from mip_procure.action_update_packing_cost import update_packing_cost_solve2
 from mip_procure import input_schema, output_schema
 from mip_procure import solve
-
 
 pd.set_option('display.max_columns', 10)
 pd.set_option('display.width', 4000)
@@ -43,4 +40,3 @@ print('row_failures:', row_failures)
 output_path = cwd / 'data/outputs/'
 output_schema.csv.write_directory(sln, output_path)
 output_schema.xls.write_file(sln, output_path / 'Output.xlsx')
-

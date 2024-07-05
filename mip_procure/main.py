@@ -34,7 +34,7 @@ def solve(dat):
     x = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpInteger, lowBound=0.0, name='x')  # Qty of transporting packing
     w = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpInteger, lowBound=0.0, name='w')  # Acquired quantity of packing
     wb = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpBinary, name='wb') # Binary decision variable of acquisition
-    xb = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpBinary, name='xb') # Binary decision varianle of transport
+    xb = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpBinary, name='xb') # Binary decision variable of transport
     # endregion
 
     # region Constraints:

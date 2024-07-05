@@ -1,4 +1,4 @@
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 from mip_procure.main import solve
 from mip_procure.schemas import input_schema, output_schema
 from mip_procure.action_update_packing_cost import update_packing_cost_solve
@@ -34,7 +34,7 @@ input_tables_config = {
     'order': list(),
     'tables_display_names': {'demand_packing': 'Demand Packing', 'items_aging': 'Items Aging'},
     'columns_display_names': {'distribution': {'Minimum Transfer Qty': 'Minimum Transfer Quantity',
-                                               'Maximum Transfer Qty': 'Maximum Transfer Quantity'} },
+                                            'Maximum Transfer Qty': 'Maximum Transfer Quantity'}},
     'hidden_columns': {'packing': ['Color', 'Size']
                        }
     }
@@ -48,13 +48,3 @@ output_tables_config = {
     'columns_display_names': dict(),
     'hidden_columns': dict()
     }
-
-
-
-
-
-
-
-
-
-
