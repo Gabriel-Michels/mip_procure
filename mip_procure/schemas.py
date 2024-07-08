@@ -30,12 +30,13 @@ input_schema.set_default_value(table='packing', field='Unit Price', default_valu
 # endregion
 
 # region demand_packing
-input_schema.set_data_type(table = 'demand_packing', field='Packing ID', number_allowed=False, strings_allowed='*')
-input_schema.set_data_type(table = 'demand_packing', field='Demand', number_allowed=True, strings_allowed=())
-input_schema.set_data_type(table = 'demand_packing', field='Period ID', number_allowed=True, strings_allowed=())
-input_schema.set_data_type(table = 'demand_packing', field='Max Order Qty',
+input_schema.set_data_type(table='demand_packing', field='Packing ID', number_allowed=False, strings_allowed='*')
+input_schema.set_data_type(table='demand_packing', field='Demand', number_allowed=True,
+                           must_be_int=True, min=0, inclusive_min=True, strings_allowed=())
+input_schema.set_data_type(table='demand_packing', field='Period ID', number_allowed=True, strings_allowed=())
+input_schema.set_data_type(table='demand_packing', field='Max Order Qty',
                            number_allowed=True, strings_allowed=())
-input_schema.set_data_type(table = 'demand_packing', field='Min Order Qty',
+input_schema.set_data_type(table='demand_packing', field='Min Order Qty',
                            number_allowed=True, strings_allowed=())
 # endregion
 
@@ -43,18 +44,18 @@ input_schema.set_data_type(table = 'demand_packing', field='Min Order Qty',
 input_schema.set_data_type(table='inventory', field='Factory ID', number_allowed=False,
                            strings_allowed=('Pack', 'Gourmet'))
 input_schema.set_data_type(table='inventory', field='Packing ID', number_allowed=False, strings_allowed='*')
-input_schema.set_data_type(table='inventory', field='Initial Inventory', number_allowed=True, strings_allowed=(),
-                            min=0.0, inclusive_min=True, max=float('inf'), inclusive_max=False)
-input_schema.set_data_type(table='inventory', field='Minimum Inventory', number_allowed=True, strings_allowed=(),
-                            min=0.0, inclusive_min=True, max=float('inf'), inclusive_max=False)
+input_schema.set_data_type(table='inventory', field='Initial Inventory', number_allowed=True, must_be_int=True,
+                           strings_allowed=(), min=0.0, inclusive_min=True, max=float('inf'), inclusive_max=False)
+input_schema.set_data_type(table='inventory', field='Minimum Inventory', number_allowed=True, must_be_int=True,
+                           strings_allowed=(), min=0.0, inclusive_min=True, max=float('inf'), inclusive_max=False)
 
 input_schema.set_data_type(table='inventory', field='Inventory Cost', number_allowed=True, strings_allowed=(),
-                            min=0.0, inclusive_min=True, max=float('inf'), inclusive_max=False)
+                           min=0.0, inclusive_min=True, max=float('inf'), inclusive_max=False)
 # endregion
 
 # region items aging
 input_schema.set_data_type(table='items_aging', field='Packing ID', number_allowed=False, strings_allowed='*')
-input_schema.set_data_type(table='items_aging', field='Maximum Time', number_allowed=True, strings_allowed=())
+input_schema.set_data_type(table='items_aging', field='Maximum Time', number_allowed=True, min=0, strings_allowed=())
 # endregion
 
 # region distribution
@@ -84,6 +85,8 @@ input_schema.add_parameter('DiversityTransportingPacking', default_value=5, numb
 # region predicate
 input_schema.add_data_row_predicate(table='distribution', predicate_name='Minimum Transfer Qty <= Maximum Transfer Qty',
                                     predicate=lambda row: row['Minimum Transfer Qty'] <= row['Maximum Transfer Qty'])
+input_schema.add_data_row_predicate(table='demand_packing', predicate_name='Minimum Order Qty <= Maximum Order Qty',
+                                    predicate= lambda row: row['Min Order Qty'] <= row['Maximum Order Qty'])
 # endregion
 
 # region OUTPUT SCHEMA
