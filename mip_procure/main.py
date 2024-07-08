@@ -10,16 +10,16 @@ def solve(dat):
     first_period = min(T)
     T_extended = T.union({first_period -1})
     params = input_schema.create_full_parameters_dict(dat)
-    dem = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
+    d = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
                        dat.demand_packing['Demand']))
     min_inventory = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']),
                              dat.inventory['Minimum Inventory']))
     ini_inventory = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']),
                              dat.inventory['Initial Inventory']))
-    unit_price = dict(zip(dat.packing['Packing ID'], dat.packing['Unit Price']))
+    c = dict(zip(dat.packing['Packing ID'], dat.packing['Unit Price']))
     inven_cost = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']),
                           dat.inventory['Inventory Cost']))
-    al = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
+    au = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
                                         dat.demand_packing['Max Order Qty']))
     moq = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
                                         dat.demand_packing['Min Order Qty']))
@@ -29,8 +29,8 @@ def solve(dat):
     mdl = pulp.LpProblem('PetGourmet', sense=pulp.LpMinimize)  # Define the model
     keys = [(i, t) for i in I for t in T]
     keys_extended = [(i, t) for i in I for t in T_extended]
-    y = pulp.LpVariable.dicts(indices=keys_extended, cat=pulp.LpInteger, lowBound=0.0, name='y')  # Qty  in Patas Pack
-    z = pulp.LpVariable.dicts(indices=keys_extended, cat=pulp.LpInteger, lowBound=0.0, name='z')  # Qty  in Pet Gourmet
+    yp = pulp.LpVariable.dicts(indices=keys_extended, cat=pulp.LpInteger, lowBound=0.0, name='y')  # Qty  in Patas Pack
+    yg = pulp.LpVariable.dicts(indices=keys_extended, cat=pulp.LpInteger, lowBound=0.0, name='z')  # Qty  in Pet Gourmet
     x = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpInteger, lowBound=0.0, name='x')  # Qty of transporting packing
     w = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpInteger, lowBound=0.0, name='w')  # Acquired quantity of packing
     wb = pulp.LpVariable.dicts(indices=keys, cat=pulp.LpBinary, name='wb') # Binary decision variable of acquisition
@@ -42,14 +42,14 @@ def solve(dat):
     # C1) Inventory capacity:
     for t in T:
         # Patas Pack Inventory Capacity:
-        mdl.addConstraint(lpSum(y[i, t] for i in I) <= params['InventoryCapacityPack'], name=f'C1a_{t}')
+        mdl.addConstraint(lpSum(yp[i, t] for i in I) <= params['InventoryCapacityPack'], name=f'C1a_{t}')
         # Pet Gourmet Inventory Capacity:
-        mdl.addConstraint(lpSum(z[i, t] for i in I) <= params['InventoryCapacityGourmet'], name=f'C1b_{t}')
+        mdl.addConstraint(lpSum(yg[i, t] for i in I) <= params['InventoryCapacityGourmet'], name=f'C1b_{t}')
 
     # C2) Minimum and maximum order quantity:
     for i in I:
         for t in T:
-            mdl.addConstraint(w[i, t] <= wb[i, t]*al[i, t], name=f'C2a_{t}_{i}')
+            mdl.addConstraint(w[i, t] <= wb[i, t]*au[i, t], name=f'C2a_{t}_{i}')
             mdl.addConstraint(w[i, t] >= wb[i ,t]*moq[i,t], name=f'C2b_{t}_{i}')
                         
     # C3) Transporting limit by period:
@@ -59,25 +59,25 @@ def solve(dat):
     # C4) Flow Balance constraint:
     for t in T:
         for i in I:
-            mdl.addConstraint(z[i, t] == z[i, t - 1] + x[i, t] - dem[i, t], name=f'C4a_{t}_{i}')
-            mdl.addConstraint(y[i, t] == y[i, t - 1] + w[i, t] - x[i, t], name=f'C4b_{t}_{i}')
+            mdl.addConstraint(yg[i, t] == yg[i, t - 1] + x[i, t] - d[i, t], name=f'C4a_{t}_{i}')
+            mdl.addConstraint(yp[i, t] == yp[i, t - 1] + w[i, t] - x[i, t], name=f'C4b_{t}_{i}')
 
     # C5) Minimum Inventory constraint:
     for t in T:
         for i in I:
-            mdl.addConstraint(z[i, t] >= min_inventory['Gourmet', i], name=f'C5_{t}_{i}')
+            mdl.addConstraint(yg[i, t] >= min_inventory['Gourmet', i], name=f'C5_{t}_{i}')
 
     # C6) Maximum time in Patas Pack constraint:
     for t in T:
         if t <= max(T) - params['MaxTimePackingPack']:
             for i in I:
-                mdl.addConstraint(lpSum(x[i, t + l] for l in range(1, int(params['MaxTimePackingPack']) + 1)) >= y[i, t],
+                mdl.addConstraint(lpSum(x[i, t + l] for l in range(1, int(params['MaxTimePackingPack']) + 1)) >= yp[i, t],
                                   name=f'C6_{t}_{i}')
 
     # C7) Initial Inventory Constraint:
     for i in I:
-        mdl.addConstraint(y[i, first_period - 1] == ini_inventory['Pack', i], name=f'C7a_{i}')
-        mdl.addConstraint(z[i, first_period - 1] == ini_inventory['Gourmet', i], name=f'C7b_{i}')
+        mdl.addConstraint(yp[i, first_period - 1] == ini_inventory['Pack', i], name=f'C7a_{i}')
+        mdl.addConstraint(yg[i, first_period - 1] == ini_inventory['Gourmet', i], name=f'C7b_{i}')
 
     # C8) Maximum number of different packing types that can be transferred:
     for t in T:
@@ -92,9 +92,9 @@ def solve(dat):
 
     # region Set Objective Function
     mdl.setObjective(
-        lpSum(unit_price[i] * w[i, t] for i in I for t in T) +
-        lpSum(inven_cost['Pack', i] * y[i, t] for i in I for t in T) +
-        lpSum(inven_cost['Gourmet', i] * z[i, t] for i in I for t in T)
+        lpSum(c[i] * w[i, t] for i in I for t in T) +
+        lpSum(inven_cost['Pack', i] * yp[i, t] for i in I for t in T) +
+        lpSum(inven_cost['Gourmet', i] * yg[i, t] for i in I for t in T)
     )
     # endregion
 
@@ -105,8 +105,8 @@ def solve(dat):
 
     if status == 'Optimal':
         x_sol = [(i, t, var.value()) for (i, t), var in x.items()]
-        y_sol = [(i, t, var.value()) for (i, t), var in y.items()]
-        z_sol = [(i, t, var.value()) for (i, t), var in z.items()]
+        yp_sol = [(i, t, var.value()) for (i, t), var in yp.items()]
+        yg_sol = [(i, t, var.value()) for (i, t), var in yg.items()]
         w_sol = [(i, t, var.value()) for (i, t), var in w.items()]
         wb_sol = [(i, t, var.value()) for (i, t), var in wb.items()]  # without future use
 
@@ -122,7 +122,7 @@ def solve(dat):
     if status == 'Optimal':
         w_df = pd.DataFrame(w_sol, columns=['Packing ID', 'Period ID', 'Acquired Quantity'])
         x_df = pd.DataFrame(x_sol, columns=['Packing ID', 'Period ID', 'Transferred Quantity'])
-        z_df = pd.DataFrame(z_sol, columns=['Packing ID', 'Period ID', 'Final Inventory'])
+        z_df = pd.DataFrame(yg_sol, columns=['Packing ID', 'Period ID', 'Final Inventory'])
 
         # demand table
         demand_packing_df = dat.demand_packing.copy()
@@ -143,7 +143,7 @@ def solve(dat):
         sln.pet_gourmet = pet_gourmet_df
 
         # Patas Pack Table
-        y_df = pd.DataFrame(y_sol, columns=['Packing ID', 'Period ID', 'Final Inventory'])
+        y_df = pd.DataFrame(yp_sol, columns=['Packing ID', 'Period ID', 'Final Inventory'])
         patas_pack_df = x_df.merge(y_df, on=['Packing ID', 'Period ID'], how='left')
         patas_pack_df = patas_pack_df.merge(w_df, on=['Packing ID', 'Period ID'], how='left')
         # y[i, t] == y[i, t - 1] + w[i, t] - x[i, t] remember the flow balance's equation
