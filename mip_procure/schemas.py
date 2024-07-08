@@ -86,7 +86,7 @@ input_schema.add_parameter('DiversityTransportingPacking', default_value=5, numb
 input_schema.add_data_row_predicate(table='distribution', predicate_name='Minimum Transfer Qty <= Maximum Transfer Qty',
                                     predicate=lambda row: row['Minimum Transfer Qty'] <= row['Maximum Transfer Qty'])
 input_schema.add_data_row_predicate(table='demand_packing', predicate_name='Minimum Order Qty <= Maximum Order Qty',
-                                    predicate= lambda row: row['Min Order Qty'] <= row['Maximum Order Qty'])
+                                    predicate= lambda row: row['Min Order Qty'] <= row['Max Order Qty'])
 # endregion
 
 # region OUTPUT SCHEMA
