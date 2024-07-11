@@ -12,7 +12,7 @@ def solve(dat):
     params = input_schema.create_full_parameters_dict(dat)
     d = dict(zip(zip(dat.demand_packing['Packing ID'], dat.demand_packing['Period ID']),
                        dat.demand_packing['Demand']))
-    min_inventory = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']),
+    ilg = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']),
                              dat.inventory['Minimum Inventory']))
     ini_inventory = dict(zip(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']),
                              dat.inventory['Initial Inventory']))
@@ -65,7 +65,7 @@ def solve(dat):
     # C5) Minimum Inventory constraint:
     for t in T:
         for i in I:
-            mdl.addConstraint(yg[i, t] >= min_inventory['Gourmet', i], name=f'C5_{t}_{i}')
+            mdl.addConstraint(yg[i, t] >= ilg['Gourmet', i], name=f'C5_{t}_{i}')
 
     # C6) Maximum time in Patas Pack constraint:
     for t in T:
