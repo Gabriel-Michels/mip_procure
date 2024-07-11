@@ -167,3 +167,7 @@ cython_debug/
 test_mip_procure/data/inputs/*.csv
 test_mip_procure/data/outputs/*.csv
 *.csv
+
+# ignore lp files
+test_mip_procure/*.lp
+*.lp
