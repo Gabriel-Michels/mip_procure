@@ -33,11 +33,12 @@ input_schema.set_default_value(table='packing', field='Unit Price', default_valu
 input_schema.set_data_type(table='demand_packing', field='Packing ID', number_allowed=False, strings_allowed='*')
 input_schema.set_data_type(table='demand_packing', field='Demand', number_allowed=True,
                            must_be_int=True, min=0, inclusive_min=True, strings_allowed=())
-input_schema.set_data_type(table='demand_packing', field='Period ID', number_allowed=True, strings_allowed=())
+input_schema.set_data_type(table='demand_packing', field='Period ID', number_allowed=True, must_be_int=True,
+                           strings_allowed=())
 input_schema.set_data_type(table='demand_packing', field='Max Order Qty',
-                           number_allowed=True, strings_allowed=())
+                           number_allowed=True, strings_allowed=(), min=0.0)
 input_schema.set_data_type(table='demand_packing', field='Min Order Qty',
-                           number_allowed=True, strings_allowed=())
+                           number_allowed=True, strings_allowed=(), min=0.0)
 # endregion
 
 # region inventory
@@ -55,7 +56,7 @@ input_schema.set_data_type(table='inventory', field='Inventory Cost', number_all
 
 # region items aging
 input_schema.set_data_type(table='items_aging', field='Packing ID', number_allowed=False, strings_allowed='*')
-input_schema.set_data_type(table='items_aging', field='Maximum Time', number_allowed=True, min=0, strings_allowed=())
+input_schema.set_data_type(table='items_aging', field='Maximum Time', number_allowed=True, must_be_int=True, min=0, strings_allowed=())
 # endregion
 
 # region distribution
