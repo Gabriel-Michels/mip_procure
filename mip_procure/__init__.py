@@ -1,4 +1,4 @@
-__version__ = "0.5.0"
+__version__ = "1.0.0"
 from mip_procure.main import solve
 from mip_procure.schemas import input_schema, output_schema
 from mip_procure.action_update_packing_cost import update_packing_cost_solve
