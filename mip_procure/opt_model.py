@@ -37,12 +37,6 @@ class OptModel:
         self.sol = None
         self.vars = {}
 
-        # Trata-se de uma customização, parece bom fazer isso!
-        # self.inventory_cost_s = None  # will be created inside _build_objective()
-        # self.inventory_cost = None  # will be created inside _build_objective()
-        # self.purchase_cost = None  # will be created inside _build_objective()
-        # self.total_cost = None  # will be created inside _build_objective()
-
     def build_base_model(self) -> None:
         """
         Build the base optimization model.
@@ -226,13 +220,6 @@ class OptModel:
             yg_sol = [(i, t, var.value()) for (i, t), var in yg.items()]
             w_sol = [(i, t, var.value()) for (i, t), var in w.items()]
             wb_sol = [(i, t, var.value()) for (i, t), var in wb.items()]  # without future use
-
-            # x_sol = {key: var.X for key, var in x.items() if var.X > 1e-2}
-            # y_sol = {key: var.X for key, var in y.items()}
-            # z_sol = [key for key, var in z.items() if var.X > 1e-2]
-            # ys_sol = {key: var.X for key, var in ys.items()}
-            # w_sol = {key: var.X for key, var in w.items() if var.X > 1e-2}
-            # zs_sol = [key for key, var in zs.items() if var.X > 1e-2]
 
             # kpis_sol = [
             #     ('Total Cost', self.total_cost.getValue()),

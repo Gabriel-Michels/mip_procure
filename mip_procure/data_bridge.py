@@ -79,17 +79,7 @@ class DatIn:
         self.T = set(dat.demand_packing['Period ID'])
         self.first_period = min(self.T)
         self.T_extend = self.T.union({self.first_period - 1})
-
-        # The line 83 gives more sense for the definition of T as a ordened list.
-        # self.T = dat.time_periods['Period ID'].sort_values(ascending=True, ignore_index=True).to_list() # Solution by Luiz
-        # if not is_list_of_consecutive_increasing_integers(self.T):
-        #   raise ValueError("'Period ID' column in 'time_periods' table must contain consecutive integers.")
-
-        # self.suppliers_ids = set(dat.sites.loc[dat.sites['Site Type'] == SiteTypes.SUPPLIER, 'Site ID'])
-        # self.warehouses_ids = set(dat.sites.loc[dat.sites['Site Type'] == SiteTypes.WAREHOUSE, 'Site ID'])
-        # if (len(self.suppliers_ids) + len(self.warehouses_ids) >= 3):
-        # raise NotImplementedError("The model is not yet implemented for multi-suppliers and/or multi-warehouses.")
-
+    
     def _populate_parameters(self) -> None:
         """
         Populate the parameters to be used when adding constraints and the objective function to the
@@ -172,15 +162,6 @@ class DatOut:
         self.patas_pack_df = None
         self.pet_gourmet_df = None
 
-        """
-         self.flow_supplier_df = None
-         self.flow_warehouse_df = None
-         self.orders_df = None
-         self.shipments_df = None
-         self.total_inventory_df = None
-         self.kpis_df = None
-        """
-
         # populate the solution dataframes
         self._process_solution()
 
@@ -195,51 +176,21 @@ class DatOut:
         status = mdl.status
         status_str = pulp.LpStatus[status]
 
-        # get solution status and whether the solution is good
-        # solution_status = self.opt_sol['status']
-        # solution_status_str = self.solution_model.gurobi_statuses[solution_status]
-        # is_feasible_solution = (self.solution_model.mdl.SolCount > 0)
-
-        # if not is_feasible_solution:
-          # msg = f"Cannot process solution because it's not feasible. Solution status: {solution_status_str}"
-          # raise BadSolutionError(msg)
         if status != pulp.LpStatusOptimal:
             return
+        
         # read output variables values from optimization
         vars_sol = self.opt_sol['vars']
         x_sol = vars_sol['x']
         yp_sol = vars_sol['yp']
         yg_sol = vars_sol['yg']
         w_sol = vars_sol['w']
-        # xb_sol = vars_sol['xb']
-        # wb_sol = vars_sol['wb']
-
-        # create output dataframes
-        # get sequence of items and time periods, ordered as they come from the input data
-        # items_sequence = dat.items['Item ID'].to_list()
-        # periods_sequence = dat.time_periods['Period ID'].to_list()
-        # all_items_periods_df = pd.DataFrame(
-        #     data=itertools.product(items_sequence, periods_sequence),
-        #     columns=['Item ID', 'Period ID']
-        # )
-        # all_items_periods_df = all_items_periods_df.astype({'Item ID': str, 'Period ID': int})
-
-        # filter inventory by supplier and warehouse
-        # inventory_df_supplier = dat.inventory[dat.inventory['Site ID'].isin(dat_in.suppliers_ids)].copy()
-        # inventory_df_warehouse = dat.inventory[dat.inventory['Site ID'].isin(dat_in.warehouses_ids)].copy()
 
         # create the output dataframe
-
-
         x_df = pd.DataFrame(data=x_sol, columns=['Packing ID', 'Period ID', 'Transferred Quantity'])
         w_df = pd.DataFrame(w_sol, columns=['Packing ID', 'Period ID', 'Acquired Quantity'])
         yp_df = pd.DataFrame(yp_sol, columns=['Packing ID', 'Period ID', 'Final Inventory'])
         yg_df = pd.DataFrame(yg_sol, columns=['Packing ID', 'Period ID', 'Final Inventory'])
-
-        # x_df = pd.DataFrame(
-        #     data=[(i, t, value) for (i, t), value in x_sol.items()],
-        # columns=['Item ID', 'Period ID', 'Order Qty.']
-        # )
 
         # demand table
         demand_packing_df = dat.demand_packing.copy()
@@ -272,130 +223,6 @@ class DatOut:
                                                   ascending=[True, True], ignore_index=True)
         self.patas_pack_df = patas_pack_df
 
-        # orders_df = x_df.merge(dat.items[['Item ID', 'Min Order Qty.', 'Max Order Qty.']], on='Item ID')
-        # orders_df = orders_df.merge(
-        #     dat.procurement_costs[['Item ID', 'Period ID', 'Unit Cost']], on=['Item ID', 'Period ID'], how='left'
-        # )
-        # orders_df['Order Cost'] = orders_df['Order Qty.'] * orders_df['Unit Cost']
-        # orders_df = orders_df[['Item ID', 'Period ID', 'Order Qty.', 'Min Order Qty.', 'Max Order Qty.', 'Unit Cost',
-        #                        'Order Cost']]
-        # orders_df = orders_df.astype({'Item ID': str, 'Period ID': int, 'Order Qty.': float, 'Min Order Qty.': float,
-        #                               'Max Order Qty.': float, 'Unit Cost': float, 'Order Cost': float})
-        # sort values as they come from the input data by merging with all_items_periods_df
-        # orders_df = all_items_periods_df.merge(orders_df, on=['Item ID', 'Period ID'], how='inner')
-        # orders_df['Order ID'] = range(1, len(orders_df) + 1)
-        # orders_df['Order ID'] = orders_df['Order ID'].astype(str)
-        # self.orders_df = orders_df
-
-        # create shipments dataframe
-        # w_df = pd.DataFrame(data=[(i, t, value) for (i, t), value in w_sol.items()],
-        #                     columns=['Item ID', 'Period ID', 'Transferred Qty.'])
-        # shipments_df = w_df.merge(dat.items[['Item ID', 'Min Transfer Qty.']], on='Item ID', how='left')
-        # shipments_df = shipments_df.astype({'Item ID': str, 'Period ID': int, 'Transferred Qty.': float,
-        #                                     'Min Transfer Qty.': float})
-        # sort values as they come from the input data by merging with all_items_periods_df
-        # shipments_df = all_items_periods_df.merge(shipments_df, on=['Item ID', 'Period ID'], how='inner')
-        # shipments_df['Shipment ID'] = range(1, len(shipments_df) + 1)
-        # shipments_df = shipments_df.astype({'Shipment ID': str})
-        # self.shipments_df = shipments_df
-
-        # create flow_supplier dataframe
-        # ys_df = pd.DataFrame(data=[(i, t, value) for (i, t), value in ys_sol.items()],
-        #                      columns=['Item ID', 'Period ID', 'Final Inventory'])
-        # ys_df = ys_df.astype({'Item ID': str, 'Period ID': int, 'Final Inventory': float})
-
-        # shift Final Inventory to create Initial Inventory, and fill missing values with Opening Inventory
-        # ys_df = ys_df.sort_values(by=['Item ID', 'Period ID'], ascending=True, ignore_index=True)
-        # ys_df['Initial Inventory'] = ys_df.groupby('Item ID')['Final Inventory'].shift(1)
-        # ys_df.loc[ys_df['Initial Inventory'].isna(), 'Initial Inventory'] = ys_df.loc[
-        #     ys_df['Initial Inventory'].isna(), 'Item ID'
-        # ].map(dat_in.ois)
-
-        # flow_supplier_df = all_items_periods_df.merge(ys_df, on=['Item ID', 'Period ID'], how='left')
-        # flow_supplier_df = flow_supplier_df.merge(
-        #     orders_df[['Item ID', 'Period ID', 'Order Qty.']], on=['Item ID', 'Period ID'], how='left'
-        # )
-        # flow_supplier_df['Order Qty.'] = flow_supplier_df['Order Qty.'].fillna(0)
-        # flow_supplier_df = flow_supplier_df.merge(
-        #     shipments_df[['Item ID', 'Period ID', 'Transferred Qty.']], on=['Item ID', 'Period ID'], how='left'
-        # )
-        # flow_supplier_df['Transferred Qty.'] = flow_supplier_df['Transferred Qty.'].fillna(0)
-        # flow_supplier_df = flow_supplier_df.merge(
-        #     inventory_df_supplier[['Item ID', 'Unit Holding Cost']], on='Item ID', how='left'
-        # )
-        # flow_supplier_df['Holding Cost'] = flow_supplier_df['Final Inventory'] * flow_supplier_df['Unit Holding Cost']
-        # flow_supplier_df = flow_supplier_df.astype({
-        #     'Item ID': str, 'Period ID': int, 'Initial Inventory': float, 'Order Qty.': float,
-        #     'Transferred Qty.': float, 'Final Inventory': float, 'Unit Holding Cost': float, 'Holding Cost': float
-        # })
-        # self.flow_supplier_df = flow_supplier_df
-
-        # create flow_warehouse dataframe
-        # y_df = pd.DataFrame(data=[(i, t, value) for (i, t), value in y_sol.items()],
-        #                     columns=['Item ID', 'Period ID', 'Final Inventory'])
-        # y_df = y_df.astype({'Item ID': str, 'Period ID': int, 'Final Inventory': float})
-        #
-        # shift Final Inventory to create Initial Inventory, and fill missing values with Opening Inventory
-        # y_df = y_df.sort_values(by=['Item ID', 'Period ID'], ascending=True, ignore_index=True)
-        # y_df['Initial Inventory'] = y_df.groupby('Item ID')['Final Inventory'].shift(1)
-        # y_df.loc[y_df['Initial Inventory'].isna(), 'Initial Inventory'] = y_df.loc[
-        #     y_df['Initial Inventory'].isna(), 'Item ID'
-        # ].map(dat_in.oi)
-
-        # flow_warehouse_df = all_items_periods_df.merge(y_df, on=['Item ID', 'Period ID'], how='left')
-        # flow_warehouse_df = flow_warehouse_df.merge(
-        #     shipments_df[['Item ID', 'Period ID', 'Transferred Qty.']], on=['Item ID', 'Period ID'], how='left'
-        # )
-        # flow_warehouse_df['Transferred Qty.'] = flow_warehouse_df['Transferred Qty.'].fillna(0)
-        # flow_warehouse_df = flow_warehouse_df.rename(columns={'Transferred Qty.': 'Received Qty.'})
-        # flow_warehouse_df = flow_warehouse_df.merge(
-        #     dat.demand[['Item ID', 'Period ID', 'Demand Qty.', 'Min Inventory']],
-        #     on=['Item ID', 'Period ID'],
-        #     how='left'
-        # )
-        # flow_warehouse_df['Demand Qty.'] = flow_warehouse_df['Demand Qty.'].fillna(0)
-        # flow_warehouse_df['Min Inventory'] = flow_warehouse_df['Min Inventory'].fillna(0)
-        # flow_warehouse_df = flow_warehouse_df.merge(
-        #     inventory_df_warehouse[['Item ID', 'Unit Holding Cost']], on='Item ID', how='left'
-        # )
-        # flow_warehouse_df['Holding Cost'] = flow_warehouse_df['Final Inventory'] * flow_warehouse_df['Unit Holding Cost']
-        # flow_warehouse_df = flow_warehouse_df.astype({
-        #     'Item ID': str, 'Period ID': int, 'Initial Inventory': float, 'Received Qty.': float,
-        #     'Demand Qty.': float, 'Final Inventory': float, 'Min Inventory': float, 'Unit Holding Cost': float,
-        #     'Holding Cost': float
-        # })
-        # self.flow_warehouse_df = flow_warehouse_df
-
-        # create total_inventory dataframe
-        # inventory_capacity_supplier_df = pd.DataFrame(
-        #     data=itertools.product(dat_in.suppliers_ids, T), columns=['Site ID', 'Period ID']
-        # )
-        # inventory_capacity_supplier_df['Inventory Capacity'] = inventory_capacity_supplier_df['Period ID'].map(dat_in.ius)
-        # inventory_capacity_warehouse_df = pd.DataFrame({
-        #     'Site ID': list(dat_in.warehouses_ids) * len(T),
-        #     'Period ID': T * len(dat_in.warehouses_ids)
-        # })
-        # inventory_capacity_warehouse_df['Inventory Capacity'] = inventory_capacity_supplier_df['Period ID'].map(dat_in.iu)
-
-        # total_inventory_df_supplier = flow_supplier_df.groupby('Period ID')['Final Inventory'].agg('sum').reset_index()
-        # total_inventory_df_supplier = total_inventory_df_supplier.merge(
-        #     inventory_capacity_supplier_df[['Site ID', 'Period ID', 'Inventory Capacity']], on='Period ID'
-        # )
-        # total_inventory_df_warehouse = flow_warehouse_df.groupby('Period ID')['Final Inventory'].agg('sum').reset_index()
-        # total_inventory_df_warehouse = total_inventory_df_warehouse.merge(
-        #     inventory_capacity_warehouse_df[['Site ID', 'Period ID', 'Inventory Capacity']], on='Period ID'
-        # )
-        # total_inventory_df = pd.concat([total_inventory_df_supplier, total_inventory_df_warehouse], ignore_index=True)
-        # total_inventory_df = total_inventory_df.astype({
-        #     'Site ID': str, 'Period ID': int, 'Final Inventory': float, 'Inventory Capacity': float
-        # })
-        # total_inventory_df = total_inventory_df.sort_values(by=['Site ID', 'Period ID']).reset_index(drop=True)
-        # self.total_inventory_df = total_inventory_df
-
-        # create kpis dataframe
-        # kpis_df = pd.DataFrame(data=kpis_sol, columns=['KPI', 'Value']).astype({'KPI': str, 'Value': float})
-        # self.kpis_df = kpis_df
-
     def build_output(self) -> output_schema.PanDat:
         """
         Populates the output "sln" object.
@@ -411,10 +238,4 @@ class DatOut:
         sln.pet_gourmet_df = self.pet_gourmet_df
         sln.patas_pack_df = self.patas_pack_df
 
-        # sln.flow_supplier = self.flow_supplier_df
-        # sln.flow_warehouse = self.flow_warehouse_df
-        # sln.orders = self.orders_df
-        # sln.shipments = self.shipments_df
-        # sln.total_inventory = self.total_inventory_df
-        # sln.kpis = self.kpis_df
         return sln
