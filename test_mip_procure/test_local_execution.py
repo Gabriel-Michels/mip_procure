@@ -1,42 +1,32 @@
+from test_mip_procure import utils
 from pathlib import Path
 import pandas as pd
-from mip_procure import input_schema, output_schema
-from mip_procure import solve
+import mip_procure
+import unittest
 
 pd.set_option('display.max_columns', 10)
 pd.set_option('display.width', 4000)
 
 cwd = Path(__file__).parent.resolve()
 
-# Read input data
-input_path = cwd / 'data/inputs'
-dat = input_schema.csv.create_pan_dat(input_path)
 
-# Check input data
-data_type_failures = input_schema.find_data_type_failures(dat)
-print('data_type_failures:\n', data_type_failures)
-foreign_failures = input_schema.find_foreign_key_failures(dat)
-print('foreign_failures:\n', foreign_failures)
-duplicates = input_schema.find_duplicates(dat)
-print('duplicates:\n', duplicates)
-row_failures = input_schema.find_data_row_failures(dat)
-print('row_failures:', row_failures)
+class TestLocalExecution(unittest.TestCase):
+    """
+    THIS IS NOT UNIT TESTING! Unit testing are implemented in other scripts.
 
-# optimize
-sln = solve(dat)
+    This class only serves the purpose of conveniently (with one click) executing solve engines locally during
+    development.
 
-# Check output data
-print('\nCheck output data:\n')
-data_type_failures = output_schema.find_data_type_failures(sln)
-print('data_type_failures:\n', data_type_failures)
-foreign_failures = output_schema.find_foreign_key_failures(sln)
-print('foreign_failures:\n', foreign_failures)
-duplicates = output_schema.find_duplicates(sln)
-print('duplicates:\n', duplicates)
-row_failures = output_schema.find_data_row_failures(sln)
-print('row_failures:', row_failures)
+    In addition, the methods in this class mimic the execution flow that a user typically experience on a Mip Hub app.
+    """
 
-# Write output data
-output_path = cwd / 'data/outputs/'
-output_schema.csv.write_directory(sln, output_path)
-output_schema.xls.write_file(sln, output_path / 'Output.xlsx')
+    def test_1_action_data_ingestion(self):
+        dat = utils.read_data(input_data_loc=f"{cwd}/data/testing_data/validation_data.xlsx", schema=mip_procure.input_schema)
+        utils.check_data(dat, mip_procure.input_schema)
+        utils.write_data(dat, f'{cwd}/data/inputs', mip_procure.input_schema)
+
+    # testing_data / mip_procure_input_data_v1.xlsx
+    def test_2_main_solve(self):
+        dat = utils.read_data(f'{cwd}/data/inputs', mip_procure.input_schema)
+        sln = mip_procure.solve(dat)
+        utils.write_data(sln, f'{cwd}/data/outputs', mip_procure.output_schema)

@@ -69,7 +69,7 @@ input_schema.set_data_type(table='distribution', field='Maximum Transfer Qty', n
 # endregion
 
 # region Parameters
-input_schema.add_parameter('Packing Cost Multiplier', default_value=1.2, number_allowed=True, strings_allowed=(),
+input_schema.add_parameter('PackingCostMultiplier', default_value=1.2, number_allowed=True, strings_allowed=(),
                            must_be_int=False, min=0.0, inclusive_min=True, max=10, inclusive_max=True)
 input_schema.add_parameter('InventoryCapacityPack', default_value=5000, number_allowed=True,
                            strings_allowed=(), min=0.0, inclusive_min=True)
@@ -115,7 +115,7 @@ output_schema.set_data_type(table=table, field='Final Inventory',  strings_allow
                             min=0, inclusive_min=True, max=float('inf'), inclusive_max=False)
 # endregion
 
-#region patas_pack
+# region patas_pack
 table = 'patas_pack'
 output_schema.set_data_type(table=table, field='Packing ID', number_allowed=False,
                             strings_allowed=('P1', 'P2', 'P3', 'P4', 'P5', 'P6'))
