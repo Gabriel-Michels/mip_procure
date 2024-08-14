@@ -4,6 +4,7 @@ from mip_procure.constants import SiteTypes
 from mip_procure.schemas import input_schema, output_schema
 from mip_procure.utils import BadSolutionError, is_list_of_consecutive_increasing_integers
 import pulp
+from mip_procure.data_preparation import data_integrity_checks
 
 
 class DatIn:
@@ -32,6 +33,9 @@ class DatIn:
         print('Instantiating a DatIn object...')
         self.dat = input_schema.copy_pan_dat(pan_dat=dat)  # copy input "dat" to avoid over-writing
         self.dat_params = input_schema.create_full_parameters_dict(dat)  # create input parameters from 'dat'
+
+        # Additional integrity checks
+        data_integrity_checks(self.dat)
 
         # set of indices, populated in _populate_sets_of_indices() method
         self.I = set()  # set of items ids
