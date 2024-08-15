@@ -4,7 +4,12 @@ from mip_procure.constants import SiteTypes
 from mip_procure.schemas import input_schema, output_schema
 from mip_procure.utils import BadSolutionError, is_list_of_consecutive_increasing_integers
 import pulp
-from mip_procure.data_preparation import data_integrity_checks
+from mip_procure.data_preparation import (
+    data_integrity_checks,
+    data_integrity_checks2,
+    data_integrity_checks3,
+    data_integrity_checks4
+)
 
 
 class DatIn:
@@ -36,6 +41,9 @@ class DatIn:
 
         # Additional integrity checks
         data_integrity_checks(self.dat)
+        data_integrity_checks2(self.dat)
+        data_integrity_checks3(self.dat)
+        data_integrity_checks4(self.dat)
 
         # set of indices, populated in _populate_sets_of_indices() method
         self.I = set()  # set of items ids
