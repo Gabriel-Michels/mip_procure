@@ -1,11 +1,9 @@
-from collections import namedtuple
+from typing import NamedTuple
 
 
-# Constants for Site Type
-_SiteTypes = namedtuple(
-    'SiteTypes', ['WAREHOUSE', 'SUPPLIER']
-)
-SiteTypes = _SiteTypes(
-    WAREHOUSE='Warehouse',
-    SUPPLIER='Supplier'
-)
+class _Sites(NamedTuple):
+    PACK: str = 'Pack'
+    GOURMET: str = 'Gourmet'
+
+
+Sites = _Sites()
