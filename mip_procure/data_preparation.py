@@ -1,5 +1,5 @@
 import itertools
-
+from mip_procure.constants import Sites
 
 def data_integrity_checks(dat):
     demand_packing_df = dat.demand_packing.copy()
@@ -16,12 +16,12 @@ def data_integrity_checks(dat):
 
 def data_integrity_checks2(dat):
     packings_set = set(dat.packing['Packing ID'])
-    factories_set = set(dat.inventory['Factory ID'])
+    factories_set = set(Sites)
     set_factories_packings = set(itertools.product(factories_set, packings_set))
     set_received = set(zip(dat.inventory['Factory ID'], dat.inventory['Packing ID']))
     set_dif = set_factories_packings.difference(set_received)
     if set_dif != set():
-        raise ValueError(f'There are missing pairs od factory and product from inventory tablr:\n'
+        raise ValueError(f'There are missing pairs of factory and product from inventory tablr:\n'
                          f'{set_dif}')
     return
 
@@ -46,5 +46,10 @@ def data_integrity_checks4(dat):
     return
 
 
-
+def all_integrity_checks(dat):
+    data_integrity_checks(dat)
+    data_integrity_checks2(dat)
+    data_integrity_checks3(dat)
+    data_integrity_checks4(dat)
+    return
 
