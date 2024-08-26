@@ -1,4 +1,5 @@
 from ticdat import PanDatFactory
+from mip_procure.constants import Sites
 
 # region INPUT SCHEMA
 input_schema = PanDatFactory(
@@ -43,7 +44,7 @@ input_schema.set_data_type(table='demand_packing', field='Min Order Qty',
 
 # region inventory
 input_schema.set_data_type(table='inventory', field='Factory ID', number_allowed=False,
-                           strings_allowed=('Pack', 'Gourmet'))
+                           strings_allowed=tuple(Sites))
 input_schema.set_data_type(table='inventory', field='Packing ID', number_allowed=False, strings_allowed='*')
 input_schema.set_data_type(table='inventory', field='Initial Inventory', number_allowed=True, must_be_int=True,
                            strings_allowed=(), min=0.0, inclusive_min=True, max=float('inf'), inclusive_max=False)
@@ -105,7 +106,7 @@ output_schema = PanDatFactory(
 # region pet_gourmet
 table = 'pet_gourmet'
 output_schema.set_data_type(table=table, field='Packing ID', number_allowed=False,
-                            strings_allowed=('P1', 'P2', 'P3', 'P4', 'P5', 'P6'))
+                            strings_allowed='*')
 output_schema.set_data_type(table=table, field='Period ID', number_allowed=True, must_be_int=True, strings_allowed=())
 output_schema.set_data_type(table=table, field='Initial Inventory', strings_allowed=(), min=0, inclusive_min=True,
                             max=float('inf'), inclusive_max=False)
@@ -120,7 +121,7 @@ output_schema.set_data_type(table=table, field='Final Inventory',  strings_allow
 # region patas_pack
 table = 'patas_pack'
 output_schema.set_data_type(table=table, field='Packing ID', number_allowed=False,
-                            strings_allowed=('P1', 'P2', 'P3', 'P4', 'P5', 'P6'))
+                            strings_allowed='*')
 output_schema.set_data_type(table=table, field='Period ID', number_allowed=True, must_be_int=True, strings_allowed=())
 output_schema.set_data_type(table=table, field='Initial Inventory', strings_allowed=(), min=0, inclusive_min=True,
                             max=float('inf'), inclusive_max=False)
