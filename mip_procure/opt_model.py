@@ -37,6 +37,9 @@ class OptModel:
         self.sol = None
         self.vars = {}
 
+        # Initialize the Object Function
+        self.ObjFunction = pulp.LpAffineExpression()
+
     def build_base_model(self) -> None:
         """
         Build the base optimization model.
@@ -66,7 +69,7 @@ class OptModel:
                                   name='w')  # Acquired quantity of packing
         wb = pulp.LpVariable.dicts(indices=wb_keys, cat=pulp.LpBinary,
                                    name='wb')  # Binary decision variable of acquisition
-        xb = pulp.LpVariable.dicts(indices=xb_keys, cat=pulp.LpBinary, name='xb')  # Binary decision variable of transport
+        xb = pulp.LpVariable.dicts(indices=xb_keys, cat=pulp.LpBinary, name='xb')# Binary decision variable of transport
 
         self.vars['x'] = x
         self.vars['yp'] = yp
@@ -162,6 +165,8 @@ class OptModel:
         t8 = time.perf_counter()
         print(f"ADDING C9: {t8-t7:.4f} s")
 
+
+
     def _build_objective(self) -> None:
         """
         Build and set the objective function.
@@ -174,11 +179,59 @@ class OptModel:
 
         # Trocar os conjuntos pelas keys deixa o código mais ROBUSTO!
         # Objective function
-        mdl.setObjective(
-            lpSum(c[i] * w[i, t] for i in I for t in T) +
-            lpSum(inven_cost['Pack', i] * yp[i, t] for i in I for t in T) +
-            lpSum(inven_cost['Gourmet', i] * yg[i, t] for i in I for t in T)
-        )
+
+        self.ObjFunction += lpSum(c[i] * w[i, t] for i in I for t in T) +\
+        lpSum(inven_cost['Pack', i] * yp[i, t] for i in I for t in T) +\
+        lpSum(inven_cost['Gourmet', i] * yg[i, t] for i in I for t in T)
+
+        # mdl.setObjective(
+        #    lpSum(c[i] * w[i, t] for i in I for t in T) +
+        #    lpSum(inven_cost['Pack', i] * yp[i, t] for i in I for t in T) +
+        #    lpSum(inven_cost['Gourmet', i] * yg[i, t] for i in I for t in T)
+        # )
+
+    def transporting_cost_complexity(self):
+        mdl, dat_in = self.mdl, self.dat_in
+        x = self.vars['x']
+        I, T = dat_in.I, dat_in.T
+        n_keys = [t for t in T]
+        params = dat_in.dat_params
+
+        # New Variable due the complexity
+        n = pulp.LpVariable.dicts(indices=n_keys, cat=pulp.LpInteger, lowBound=0.0,
+                                  name='n')  # Qty of trucks
+
+        # New constraints
+        mdl.addConstraint((n[t] >= lpSum(x[i, t]/params['TransportingLimitByPeriod'] for i in I), for t in T),
+                          name=f'newC1')
+
+        mdl.addConstraint((n[t] <= lpSum(x[i, t] / params['TransportingLimitByPeriod']  for i in I) + 1, for t in T),
+                          name=f'newC1')
+
+        # Update of the Objective Function
+        self.ObjFunction += n*350
+
+        return
+
+    def discount_complexity(self):
+        mdl, dat_in = self.mdl, self.dat_in
+        w = self.vars['w']
+        c = dat_in.c
+        I, T = dat_in.I, dat_in.T
+        dc_keys = [(i, t) for i in I for t in T]
+        params = dat_in.dat_params
+
+        # New variable due the complexity
+        dc = pulp.LpVariable.dicts(indices=dc_keys, cat=pulp.LpBinary, name='dc')
+
+        # New constraints
+        for i in I:
+            for t in T:
+                mdl.addConstraint(dc[i, t]*w[i, t] >= w[i, t] - params['DiscountLimit'], name=f'disC1a_{i}_{t}')
+                mdl.addConstraint(dc[i, t]*(w[i, t] - params['DiscountLimit']) >= w[i,t] - params['DiscountLimit'],
+                                  name=f'discC1b_{i}_{t}')
+
+        self.ObjFunction += lpSum(-0.10*c[i]*w[i, t] for i in I for t in T)
 
     def set_model_parameters(self, parameters: Dict[str, float]) -> None:
         """
@@ -202,6 +255,7 @@ class OptModel:
         """
         print('Solving the optimization model...')
         mdl = self.mdl
+        mdl.setObjective(self.ObjFunction)
         mdl.solve()
 
         # print status
