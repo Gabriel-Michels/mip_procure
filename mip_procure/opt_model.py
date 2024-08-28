@@ -202,14 +202,13 @@ class OptModel:
                                   name='n')  # Qty of trucks
 
         # New constraints
-        mdl.addConstraint((n[t] >= lpSum(x[i, t]/params['TransportingLimitByPeriod'] for i in I), for t in T),
-                          name=f'newC1')
-
-        mdl.addConstraint((n[t] <= lpSum(x[i, t] / params['TransportingLimitByPeriod']  for i in I) + 1, for t in T),
-                          name=f'newC1')
+        for t in T:
+            mdl.addConstraint(n[t] >= lpSum(x[i, t]*(1/params['TruckCapacity']) for i in I), name=f'newC1a_{t}')
+            mdl.addConstraint(n[t] <= lpSum(x[i, t]*(1/params['TruckCapacity']) for i in I) + 1, name=f'newC1b_{t}')
+        self.vars['n'] = n
 
         # Update of the Objective Function
-        self.ObjFunction += n*350
+        self.ObjFunction += lpSum(n)*350
 
         return
 
