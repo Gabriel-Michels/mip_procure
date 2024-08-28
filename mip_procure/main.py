@@ -7,6 +7,7 @@ def solve(dat: input_schema.PanDat) -> output_schema.PanDat:
     dat_in = DatIn(dat, verbose=True)
     opt_model = OptModel(dat_in, model_name='Mip_Procure')
     opt_model.build_base_model()
+    opt_model.transporting_cost_complexity()
     opt_model.optimize()
     opt_model.mdl.writeLP('lp.lp') # It is very useful in infeasible solutions debug.
     dat_out = DatOut(opt_model)
