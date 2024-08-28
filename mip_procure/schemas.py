@@ -82,6 +82,8 @@ input_schema.add_parameter('MaxTimePackingPack', default_value=1, number_allowed
                            strings_allowed=(), min=1, inclusive_min=True, must_be_int=True)
 input_schema.add_parameter('DiversityTransportingPacking', default_value=5, number_allowed=True,
                            strings_allowed=(), min=1, inclusive_min=True, must_be_int=True)
+input_schema.add_parameter('TruckCapacity', default_value=12000, number_allowed=True, inclusive_min=True,
+                           min=1, strings_allowed=(), must_be_int=True)
 input_schema.add_parameter('CostByTruck', default_value= 350.0, number_allowed=True, inclusive_min=True,
                            min=0, strings_allowed=(), must_be_int=False)
 input_schema.add_parameter('DiscountLimit', default_value=3000, number_allowed=True, must_be_int=True,
