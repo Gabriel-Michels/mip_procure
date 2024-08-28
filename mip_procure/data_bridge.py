@@ -237,7 +237,7 @@ class DatOut:
         """
         print('Building output dat...')
         sln = output_schema.PanDat()
-        sln.pet_gourmet_df = self.pet_gourmet_df
-        sln.patas_pack_df = self.patas_pack_df
+        sln.pet_gourmet = self.pet_gourmet_df
+        sln.patas_pack = self.patas_pack_df
 
         return sln
